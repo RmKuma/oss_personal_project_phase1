@@ -1,6 +1,6 @@
 import pygame
 import random
-from Box2D import b2World, b2PolygonShape, b2BodyDef, b2_dynamicBody, b2_staticBody
+from Box2D import b2World, b2PolygonShape, b2BodyDef, b2_dynamicBody, b2_staticBody, b2ContactListener
 from Box2D.b2 import (world, polygonShape, circleShape, staticBody, dynamicBody)
 
 # 게임 설정
@@ -29,6 +29,26 @@ MELONS = [  [0, [255,0,0], 0.3],
             [3, [0,0,200], 1.2],
             [4, [0,255,0], 2],          ]
 
+class ContactListener(b2ContactListener):
+    def __init__(self):
+        b2ContactListener.__init__(self)
+        self.collisions = []
+        self.to_destroy = []
+
+    def BeginContact(self, contact):
+        bodyA = contact.fixtureA.body
+        bodyB = contact.fixtureB.body
+        if bodyA.userData["type"] != "wall" and bodyB.userData["type"] != "wall":
+            if bodyA.userData["level"] == bodyB.userData["level"]:
+                self.to_destroy.append([bodyA, bodyB])
+
+    # def EndContact(self, contact):
+    #     bodyA = contact.fixtureA.body
+    #     bodyB = contact.fixtureB.body
+    #     self.collisions.remove((bodyA, bodyB))
+    #     print(f"Collision ended between {bodyA} and {bodyB}")
+
+
 class WatermelonGame:
     def __init__(self):
         pygame.init()
@@ -36,6 +56,8 @@ class WatermelonGame:
         pygame.display.set_caption("Watermelon Game")
         self.clock = pygame.time.Clock()
         self.world = b2World(gravity=(0, GRAVITY))
+        self.contact_listener = ContactListener()
+        self.world.contactListener = self.contact_listener
         self.watermelons = []
         self.before_positions = None
         self.current_watermelon = None
@@ -45,6 +67,8 @@ class WatermelonGame:
         body_def = b2BodyDef()
         body_def.position = (SCREEN_WIDTH//(PPM * 2), 1)
         ground = self.world.CreateBody(body_def)
+        ground.userData = {}
+        ground.userData["type"] = "wall"
         ground_shape = b2PolygonShape(box= (SCREEN_WIDTH//(PPM * 2), 1))
         ground.CreateFixture(shape=ground_shape, friction=FRICTION, restitution=RESTITUTION)
 
@@ -52,6 +76,8 @@ class WatermelonGame:
         body_def = b2BodyDef()
         body_def.position = (0, SCREEN_HEIGHT // (PPM * 2))
         ground = self.world.CreateBody(body_def)
+        ground.userData = {}
+        ground.userData["type"] = "wall"
         ground_shape = b2PolygonShape(box= (1, SCREEN_HEIGHT // (PPM * 2)))
         ground.CreateFixture(shape=ground_shape, friction=FRICTION, restitution=RESTITUTION)
 
@@ -59,6 +85,8 @@ class WatermelonGame:
         body_def = b2BodyDef()
         body_def.position = (SCREEN_WIDTH // PPM, SCREEN_HEIGHT // (PPM * 2))
         ground = self.world.CreateBody(body_def)
+        ground.userData = {}
+        ground.userData["type"] = "wall"
         ground_shape = b2PolygonShape(box= (1, SCREEN_HEIGHT // (PPM * 2)))
         ground.CreateFixture(shape=ground_shape, friction=FRICTION, restitution=RESTITUTION)
 
@@ -66,6 +94,7 @@ class WatermelonGame:
     def create_watermelon(self, position=(SCREEN_WIDTH / 2 / PPM, SCREEN_HEIGHT / PPM), level=1):
         watermelon = self.world.CreateDynamicBody(position=position, angle=0)
         watermelon.userData = {}
+        watermelon.userData["type"] = "Fruit"
         watermelon.userData["level"] = level
         watermelon.userData["color"] = MELONS[level][1]
         watermelon.CreateCircleFixture(radius=MELONS[level][2], density=1, friction=FRICTION, restitution=RESTITUTION)
@@ -105,6 +134,19 @@ class WatermelonGame:
         while running: 
             self.world.Step(TIME_STEP, 10, 10)
             self.screen.fill(WHITE)
+
+            while len(self.contact_listener.to_destroy) != 0:
+                _tmp = self.contact_listener.to_destroy[-1]
+                self.contact_listener.to_destroy.pop()
+
+                new_level = _tmp[0].userData["level"] + 1
+                new_pos = ((_tmp[0].position.x + _tmp[1].position.x) / 2, (_tmp[0].position.y + _tmp[1].position.y) / 2)
+                self.world.DestroyBody(_tmp[0])
+                self.world.DestroyBody(_tmp[1])
+                self.watermelons.append(self.create_watermelon(new_pos, new_level))
+                self.before_positions = [melon.position for melon in self.watermelons]
+
+                
 
             for body in self.world.bodies:
                 for fixture in body.fixtures:
