@@ -17,7 +17,7 @@ GREEN = (0, 255, 0)
 PPM = 20.0 / (640 // SCREEN_WIDTH) # pixels per meter
 TIME_STEP = 1.0 / FPS
 GRAVITY = -20
-FRICTION = 0.0
+FRICTION = 0.5
 RESTITUTION = 0.3
 
 GROUND_COLOR = [240,128,128, 255]
@@ -39,7 +39,22 @@ class WatermelonGame:
         body_def.position = (SCREEN_WIDTH//(PPM * 2), 1)
         ground = self.world.CreateBody(body_def)
         ground_shape = b2PolygonShape(box= (SCREEN_WIDTH//(PPM * 2), 1))
-        ground.CreateFixture(shape=ground_shape)
+        ground.CreateFixture(shape=ground_shape, friction=FRICTION, restitution=RESTITUTION)
+
+        # Left        
+        body_def = b2BodyDef()
+        body_def.position = (0, SCREEN_HEIGHT // (PPM * 2))
+        ground = self.world.CreateBody(body_def)
+        ground_shape = b2PolygonShape(box= (1, SCREEN_HEIGHT // (PPM * 2)))
+        ground.CreateFixture(shape=ground_shape, friction=FRICTION, restitution=RESTITUTION)
+
+        # Right
+        body_def = b2BodyDef()
+        body_def.position = (SCREEN_WIDTH // PPM, SCREEN_HEIGHT // (PPM * 2))
+        ground = self.world.CreateBody(body_def)
+        ground_shape = b2PolygonShape(box= (1, SCREEN_HEIGHT // (PPM * 2)))
+        ground.CreateFixture(shape=ground_shape, friction=FRICTION, restitution=RESTITUTION)
+
 
     def create_watermelon(self, position=(SCREEN_WIDTH / 2 / PPM, SCREEN_HEIGHT / PPM)):
         watermelon = self.world.CreateDynamicBody(position=position, angle=0)
@@ -51,8 +66,9 @@ class WatermelonGame:
 
     def check_all_melons_stop(self):
         check = True
-        for melon in self.watermelons:
-            if melon.linearVelocity.x != 0 or melon.linearVelocity.y != 0:
+        cur_positions = [melon.position for melon in self.watermelons]
+        for i in range(len(cur_positions)):
+            if abs(cur_positions[i].x - self.before_positions[i].x) > 0.7 or  abs(cur_positions[i].y - self.before_positions[i].y) > 0.7:
                 check = False
         return check
 
@@ -103,10 +119,12 @@ class WatermelonGame:
 
                             # go to drop phase
                             self.phase = "drop"
+                            self.before_positions = [melon.position for melon in self.watermelons]
 
             elif self.phase == "drop":
                 if self.check_all_melons_stop():
                     self.phase = "aim"
+                    
                 pass
             
             pygame.display.flip()
