@@ -14,7 +14,7 @@ BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
 
 # Box2D 설정
-PPM = 20.0  # pixels per meter
+PPM = 20.0 / (640 // SCREEN_WIDTH) # pixels per meter
 TIME_STEP = 1.0 / FPS
 GRAVITY = -20
 FRICTION = 0.0
@@ -28,77 +28,87 @@ class WatermelonGame:
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Watermelon Game")
         self.clock = pygame.time.Clock()
-        self.world = b2World(gravity=(0, GRAVITY), doSleep=True)
+        self.world = b2World(gravity=(0, GRAVITY))
         self.watermelons = []
+        self.before_positions = None
         self.current_watermelon = None
         self.create_ground()
 
     def create_ground(self):
         body_def = b2BodyDef()
-        body_def.position = (SCREEN_WIDTH / 2 / PPM, 1)
+        body_def.position = (SCREEN_WIDTH//(PPM * 2), 1)
         ground = self.world.CreateBody(body_def)
-        ground_shape = b2PolygonShape(box=(SCREEN_WIDTH / 2 / PPM, 1))
+        ground_shape = b2PolygonShape(box= (SCREEN_WIDTH//(PPM * 2), 1))
         ground.CreateFixture(shape=ground_shape)
 
-    def create_watermelon(self):
-        watermelon = self.world.CreateDynamicBody(position=(SCREEN_WIDTH / 2 / PPM, SCREEN_HEIGHT / PPM), angle=0)
+    def create_watermelon(self, position=(SCREEN_WIDTH / 2 / PPM, SCREEN_HEIGHT / PPM)):
+        watermelon = self.world.CreateDynamicBody(position=position, angle=0)
         watermelon.userData = {}
         watermelon.userData["color"] = (0, 255, 0, 255)  
         watermelon.CreateCircleFixture(radius=2, density=1, friction=FRICTION, restitution=RESTITUTION)
-        self.current_watermelon = watermelon  
-        self.current_watermelon.awake = False
+        return watermelon
+
+
+    def check_all_melons_stop(self):
+        check = True
+        for melon in self.watermelons:
+            if melon.linearVelocity.x != 0 or melon.linearVelocity.y != 0:
+                check = False
+        return check
 
 
     def run(self):
+
+        def my_draw_polygon(polygon, body, fixture):
+            vertices = [(body.transform * v) * PPM for v in polygon.vertices]
+            vertices = [(v[0], SCREEN_HEIGHT - v[1]) for v in vertices]
+            pygame.draw.polygon(self.screen, GROUND_COLOR, vertices)
+        polygonShape.draw = my_draw_polygon
+
+        def my_draw_circle(circle, body, fixture):
+            position = body.transform * circle.pos * PPM
+            position[1] = SCREEN_HEIGHT - position[1]
+            pygame.draw.circle(self.screen, body.userData["color"], [int(x) for x in position], int(circle.radius * PPM))
+        circleShape.draw = my_draw_circle
+            
         running = True
-        watermelon_ready = False
-        all_watermelons_moved = True
+        current_watermelon = None
+        self.phase = "aim"
+        _pos = [SCREEN_WIDTH / 2 / PPM, SCREEN_HEIGHT / PPM - 2]
 
-        while running:
-
+        while running: 
             self.world.Step(TIME_STEP, 10, 10)
             self.screen.fill(WHITE)
 
-            def my_draw_polygon(polygon, body, fixture):
-                vertices = [(body.transform * v) * PPM for v in polygon.vertices]
-                vertices = [(v[0], SCREEN_HEIGHT - v[1]) for v in vertices]
-                pygame.draw.polygon(self.screen, GROUND_COLOR, vertices)
-            polygonShape.draw = my_draw_polygon
-
-            def my_draw_circle(circle, body, fixture):
-                position = body.transform * circle.pos * PPM
-                position[1] = SCREEN_HEIGHT - position[1]
-                pygame.draw.circle(self.screen, body.userData["color"], [int(x) for x in position], int(circle.radius * PPM))
-            circleShape.draw = my_draw_circle
-            
             for body in self.world.bodies:
                 for fixture in body.fixtures:
                     fixture.shape.draw(body, fixture)
 
-            if not self.current_watermelon and not watermelon_ready and all_watermelons_moved:
+            ### 조준 phase ###
+            if self.phase == "aim":
+                pygame.draw.circle(self.screen, GREEN, [int(_pos[0] * PPM), int( SCREEN_HEIGHT - (_pos[1] * PPM)) ], int(2*PPM))
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    if event.type == pygame.KEYDOWN:
+                        print(event.key)
+                        if event.key == pygame.K_LEFT:
+                            _pos[0] -= 0.3
+                        if event.key == pygame.K_RIGHT:
+                            _pos[0] += 0.3
+                        if event.key == pygame.K_DOWN:
+                            print(len(self.watermelons))
+                            current_watermelon = self.create_watermelon(_pos)
+                            self.watermelons.append(current_watermelon)
 
-                self.create_watermelon()
-                watermelon_ready = True
+                            # go to drop phase
+                            self.phase = "drop"
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                if event.type == pygame.KEYDOWN:
-                    print(event.key)
-                    if event.key == pygame.K_LEFT and drop == False:
-                        self.current_watermelon.position.x -= 0.2
-                    if event.key == pygame.K_RIGHT and drop == False:
-                        self.current_watermelon.position.x += 0.2
-                    if event.key == pygame.K_DOWN and self.current_watermelon and watermelon_ready:
-                        print("here")
-                        self.current_watermelon.awake = True
-                        self.watermelons.append(self.current_watermelon)
-                        self.current_watermelon = None
-                        watermelon_ready = False
-                        drop = True
-                        all_watermelons_moved = False
-
-
+            elif self.phase == "drop":
+                if self.check_all_melons_stop():
+                    self.phase = "aim"
+                pass
+            
             pygame.display.flip()
             self.clock.tick(FPS)
 
