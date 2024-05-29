@@ -51,6 +51,11 @@ ENV PYOPENGL_PLATFORM=egl
 
 RUN apt-get install -y swig
 RUN pip install --no-cache-dir pygame
-RUN pip install --no-cache-dir Box2D
-RUN pip install --no-cache-dir pillow
 RUN pip install --no-cache-dir box2d box2d-kengz
+
+RUN apt install -y x11-apps
+
+
+# 윈도우에서하려면
+# swiging 설치
+# visual studio window build tool 설치
