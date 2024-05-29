@@ -23,11 +23,15 @@ RESTITUTION = 0.3
 GROUND_COLOR = [240,128,128, 255]
 
 
-MELONS = [  [0, [255,0,0], 0.3],
-            [1, [255,0,0], 0.5],
-            [2, [200,100,0], 0.8],
-            [3, [0,0,200], 1.2],
-            [4, [0,255,0], 2],          ]
+MELONS = [  [0, [255,0,0], 0.7],
+            [1, [255,0,0], 1.2],
+            [2, [200,100,0], 1.9],
+            [3, [0,0,200], 2.7],
+            [4, [255,99,7], 3.8],   
+            [5, [127,255,212], 5],  
+            [6, [0,191,255], 7.2],  
+            [7, [65,105,225], 9],  
+            [8, [238,130,238], 11],         ]
 
 class ContactListener(b2ContactListener):
     def __init__(self):
@@ -145,8 +149,6 @@ class WatermelonGame:
                 self.world.DestroyBody(_tmp[1])
                 self.watermelons.append(self.create_watermelon(new_pos, new_level))
                 self.before_positions = [melon.position for melon in self.watermelons]
-
-                
 
             for body in self.world.bodies:
                 for fixture in body.fixtures:
