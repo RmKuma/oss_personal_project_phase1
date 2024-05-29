@@ -22,6 +22,13 @@ RESTITUTION = 0.3
 
 GROUND_COLOR = [240,128,128, 255]
 
+
+MELONS = [  [0, [255,0,0], 0.3],
+            [1, [255,0,0], 0.5],
+            [2, [200,100,0], 0.8],
+            [3, [0,0,200], 1.2],
+            [4, [0,255,0], 2],          ]
+
 class WatermelonGame:
     def __init__(self):
         pygame.init()
@@ -56,11 +63,12 @@ class WatermelonGame:
         ground.CreateFixture(shape=ground_shape, friction=FRICTION, restitution=RESTITUTION)
 
 
-    def create_watermelon(self, position=(SCREEN_WIDTH / 2 / PPM, SCREEN_HEIGHT / PPM)):
+    def create_watermelon(self, position=(SCREEN_WIDTH / 2 / PPM, SCREEN_HEIGHT / PPM), level=1):
         watermelon = self.world.CreateDynamicBody(position=position, angle=0)
         watermelon.userData = {}
-        watermelon.userData["color"] = (0, 255, 0, 255)  
-        watermelon.CreateCircleFixture(radius=2, density=1, friction=FRICTION, restitution=RESTITUTION)
+        watermelon.userData["level"] = level
+        watermelon.userData["color"] = MELONS[level][1]
+        watermelon.CreateCircleFixture(radius=MELONS[level][2], density=1, friction=FRICTION, restitution=RESTITUTION)
         return watermelon
 
 
@@ -91,6 +99,8 @@ class WatermelonGame:
         current_watermelon = None
         self.phase = "aim"
         _pos = [SCREEN_WIDTH / 2 / PPM, SCREEN_HEIGHT / PPM - 2]
+        _level = random.randint(0,2)
+
 
         while running: 
             self.world.Step(TIME_STEP, 10, 10)
@@ -102,7 +112,7 @@ class WatermelonGame:
 
             ### 조준 phase ###
             if self.phase == "aim":
-                pygame.draw.circle(self.screen, GREEN, [int(_pos[0] * PPM), int( SCREEN_HEIGHT - (_pos[1] * PPM)) ], int(2*PPM))
+                pygame.draw.circle(self.screen, MELONS[_level][1], [int(_pos[0] * PPM), int( SCREEN_HEIGHT - (_pos[1] * PPM)) ], int(MELONS[_level][2] * PPM))
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         running = False
@@ -114,7 +124,7 @@ class WatermelonGame:
                             _pos[0] += 0.3
                         if event.key == pygame.K_DOWN:
                             print(len(self.watermelons))
-                            current_watermelon = self.create_watermelon(_pos)
+                            current_watermelon = self.create_watermelon(_pos, _level)
                             self.watermelons.append(current_watermelon)
 
                             # go to drop phase
@@ -124,7 +134,8 @@ class WatermelonGame:
             elif self.phase == "drop":
                 if self.check_all_melons_stop():
                     self.phase = "aim"
-                    
+                    _pos = [SCREEN_WIDTH / 2 / PPM, SCREEN_HEIGHT / PPM - 2]
+                    _level = random.randint(0,2)
                 pass
             
             pygame.display.flip()
