@@ -46,10 +46,42 @@ pip3 install box2d box2d-kengz
 5. 재부팅 이후 python3 main.py를 실행하면 게임 창이 뜨면서 실행됨.
 
 ### Linux
+
+1. Docker를 설치한다.
+2. Dockerfile을 build한다
+   ```
+   docker build -t watermelon:0.1 .
+   ```
+3. docker container를 실행한다
+   ```
+   docker run -it watermelon:0.1 /bin/bash
+   ```
+4. workspace 폴더 내에서 게임을 실행한다. (검증x)
+   ```
+   cd workspace
+   python3 main.py
+   ```
+
+
 ### MacOS
 
 # 실행 예시
-
-
+<span style="color:red">동영상 업로드 시 gif로 변환 후 github repository에 add, commit, push하고 링크를 삽입</span>
+![example.gif]
 # 코드 설명
+## main.py
+### class WatermelonGame
+- Description : watermelon 게임을 수행하는 메인 클래스
+  1. Def __init__ : 최초 게임을 초기화하는 단계, screen, world, contact_listener, watermelons(과일 body를 저장) 등을 초기화함.
+  2. Def create_ground : 아래, 좌, 우의 벽(바운더리)를 생성하여 과일이 화면밖으로 나가는 것을 방지
 
+### class ContactListener
+- Description : 과일 간의 충돌을 탐지하는 ContactListener
+  1. Def BeginContact() : 충돌 시 자동으로 실행되는 box2d 함수, 충돌 된 두 과일의 body를 to_destroy 어레이에 저장한다.
+ 
+
+# TODO List
+* 점수 계산하기
+* 게임 끝나는 조건 추가하기
+* 좌우 키를 누르고 있으면 빠르게 이동하기
+* start, end, restart, menu 버튼 추가하기
