@@ -1,5 +1,14 @@
 # 5점/10점 짜리 프로젝트
 
+# 구현 목표
+###  본 프로젝트는 닌텐도에서 처음 나온 "수박 게임(suica game)"이 목적이며, 과일을 떨어뜨려서 같은 과일이 합쳐지는 것을 이용해서 더 큰 과일을 만드는 것이 게임의 목표입니다. 게임 종료 조건은 '수박 과일'이 만들어 진 경우 승리하며, 일정 높이 이상 과일이 넘어가게 되면 패배합니다.
+
+# 구현 기능
+
+* pygame, box2d 기반 게임 board(환경) 구현
+* 키보드 입력으로 과일 조준 기능
+* 동일 과일이 충돌 시 합쳐지는 기능
+
 # Reference
 [1] https://github.com/pybox2d/pybox2d "pybox2d" 
 
@@ -68,6 +77,7 @@ pip3 install box2d box2d-kengz
 # 실행 예시
 <span style="color:red">동영상 업로드 시 gif로 변환 후 링크를 삽입</span>
 <span style="color:red">아래 홈페이지 참고 : https://onlydev.tistory.com/15 </span>
+
 ![example](https://github.com/RmKuma/oss_personal_project_phase1/assets/20412048/98ecfe0c-34c5-4592-86e9-defded705a36)
 
 # 코드 설명
